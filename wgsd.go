@@ -66,6 +66,7 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 	m.Authoritative = true
 
 	switch {
+	// TODO: handle SOA
 	case name == spPrefix && qtype == dns.TypePTR:
 		for _, peer := range device.Peers {
 			m.Answer = append(m.Answer, &dns.PTR{
