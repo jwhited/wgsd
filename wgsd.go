@@ -162,26 +162,26 @@ func getHostRR(pubKey, zone string, endpoint *net.UDPAddr) dns.RR {
 	}
 }
 
-func nxDomain(name string, w dns.ResponseWriter, r *dns.Msg) (int, error) {
+func nxDomain(zone string, w dns.ResponseWriter, r *dns.Msg) (int, error) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 	m.Authoritative = true
 	m.Rcode = dns.RcodeNameError
-	m.Ns = []dns.RR{soa(name)}
+	m.Ns = []dns.RR{soa(zone)}
 	w.WriteMsg(m) // nolint: errcheck
 	return dns.RcodeSuccess, nil
 }
 
-func soa(name string) dns.RR {
+func soa(zone string) dns.RR {
 	return &dns.SOA{
 		Hdr: dns.RR_Header{
-			Name:   name,
+			Name:   zone,
 			Rrtype: dns.TypeSOA,
 			Class:  dns.ClassINET,
 			Ttl:    60,
 		},
-		Ns:      fmt.Sprintf("ns1.%s", name),
-		Mbox:    fmt.Sprintf("postmaster.%s", name),
+		Ns:      fmt.Sprintf("ns1.%s", zone),
+		Mbox:    fmt.Sprintf("postmaster.%s", zone),
 		Serial:  1,
 		Refresh: 86400,
 		Retry:   7200,
