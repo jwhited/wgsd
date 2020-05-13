@@ -2,16 +2,20 @@ package wgsd
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/base32"
 	"fmt"
 	"net"
 	"strings"
 
 	"github.com/coredns/coredns/plugin"
+	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
+
+// coredns plugin-specific logger
+var logger = clog.NewWithPlugin("wgsd")
 
 // WGSD is a CoreDNS plugin that provides Wireguard peer information via DNS-SD
 // semantics. WGSD implements the plugin.Handler interface.
@@ -31,7 +35,7 @@ type wgctrlClient interface {
 }
 
 const (
-	keyLen             = 44 // the number of characters in a base64-encoded Wireguard public key
+	keyLen             = 56 // the number of characters in a base32-encoded Wireguard public key
 	spPrefix           = "_wireguard._udp."
 	serviceInstanceLen = keyLen + len(".") + len(spPrefix)
 )
@@ -52,9 +56,12 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 	name := strings.TrimSuffix(state.Name(), p.zone)
 	qtype := state.QType()
 
+	logger.Debugf("received query for: %s type: %s", name,
+		dns.TypeToString[qtype])
+
 	device, err := p.client.Device(p.device)
 	if err != nil {
-		return dns.RcodeServerFailure, nil
+		return dns.RcodeServerFailure, err
 	}
 	if len(device.Peers) == 0 {
 		return nxDomain(p.zone, w, r)
@@ -76,17 +83,18 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 					Class:  dns.ClassINET,
 					Ttl:    0,
 				},
-				Ptr: fmt.Sprintf("%s.%s%s",
-					base64.StdEncoding.EncodeToString(peer.PublicKey[:]),
-					spPrefix, p.zone),
+				Ptr: strings.ToLower(fmt.Sprintf("%s.%s%s",
+					base32.StdEncoding.EncodeToString(peer.PublicKey[:]),
+					spPrefix, p.zone)),
 			})
 		}
 		w.WriteMsg(m) // nolint: errcheck
 		return dns.RcodeSuccess, nil
 	case len(name) == serviceInstanceLen && qtype == dns.TypeSRV:
-		pubKey := name[:44]
+		pubKey := name[:keyLen]
 		for _, peer := range device.Peers {
-			if base64.StdEncoding.EncodeToString(peer.PublicKey[:]) == pubKey {
+			if strings.EqualFold(
+				base32.StdEncoding.EncodeToString(peer.PublicKey[:]), pubKey) {
 				endpoint := peer.Endpoint
 				hostRR := getHostRR(pubKey, p.zone, endpoint)
 				if hostRR == nil {
@@ -110,16 +118,18 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 			}
 		}
 		return nxDomain(p.zone, w, r)
-	case len(name) == keyLen+len(".") && (qtype == dns.TypeA ||
+	case len(name) == keyLen+1 && (qtype == dns.TypeA ||
 		qtype == dns.TypeAAAA):
-		pubKey := name[:44]
+		pubKey := name[:keyLen]
 		for _, peer := range device.Peers {
-			if base64.StdEncoding.EncodeToString(peer.PublicKey[:]) == pubKey {
+			if strings.EqualFold(
+				base32.StdEncoding.EncodeToString(peer.PublicKey[:]), pubKey) {
 				endpoint := peer.Endpoint
 				hostRR := getHostRR(pubKey, p.zone, endpoint)
 				if hostRR == nil {
 					return nxDomain(p.zone, w, r)
 				}
+				m.Answer = append(m.Answer, hostRR)
 				w.WriteMsg(m) // nolint: errcheck
 				return dns.RcodeSuccess, nil
 			}
