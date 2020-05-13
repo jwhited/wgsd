@@ -76,9 +76,9 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 					Class:  dns.ClassINET,
 					Ttl:    0,
 				},
-				Ptr: fmt.Sprintf("%s.%s",
+				Ptr: fmt.Sprintf("%s.%s%s",
 					base64.StdEncoding.EncodeToString(peer.PublicKey[:]),
-					p.zone),
+					spPrefix, p.zone),
 			})
 		}
 		w.WriteMsg(m) // nolint: errcheck
