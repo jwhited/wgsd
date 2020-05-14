@@ -83,9 +83,9 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 					Class:  dns.ClassINET,
 					Ttl:    0,
 				},
-				Ptr: strings.ToLower(fmt.Sprintf("%s.%s%s",
+				Ptr: fmt.Sprintf("%s.%s%s",
 					base32.StdEncoding.EncodeToString(peer.PublicKey[:]),
-					spPrefix, p.zone)),
+					spPrefix, p.zone),
 			})
 		}
 		w.WriteMsg(m) // nolint: errcheck
@@ -111,7 +111,8 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 					Priority: 0,
 					Weight:   0,
 					Port:     uint16(endpoint.Port),
-					Target:   fmt.Sprintf("%s.%s", pubKey, p.zone),
+					Target: fmt.Sprintf("%s.%s",
+						strings.ToUpper(pubKey), p.zone),
 				})
 				w.WriteMsg(m) // nolint: errcheck
 				return dns.RcodeSuccess, nil
@@ -144,7 +145,7 @@ func getHostRR(pubKey, zone string, endpoint *net.UDPAddr) dns.RR {
 	if endpoint.IP == nil {
 		return nil
 	}
-	name := fmt.Sprintf("%s.%s", pubKey, zone)
+	name := fmt.Sprintf("%s.%s", strings.ToUpper(pubKey), zone)
 	switch {
 	case endpoint.IP.To4() != nil:
 		return &dns.A{
