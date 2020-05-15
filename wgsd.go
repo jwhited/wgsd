@@ -142,7 +142,7 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 }
 
 func getHostRR(pubKey, zone string, endpoint *net.UDPAddr) dns.RR {
-	if endpoint.IP == nil {
+	if endpoint == nil || endpoint.IP == nil {
 		return nil
 	}
 	name := fmt.Sprintf("%s.%s", strings.ToUpper(pubKey), zone)

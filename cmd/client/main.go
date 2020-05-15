@@ -26,11 +26,12 @@ var (
 )
 
 func main() {
+	flag.Parse()
 	if len(*deviceFlag) < 1 {
 		log.Fatal("missing device flag")
 	}
 	if len(*dnsZoneFlag) < 1 {
-		log.Fatal("missing dns flag")
+		log.Fatal("missing zone flag")
 	}
 	resolver := net.DefaultResolver
 	if len(*dnsServerFlag) > 0 {
@@ -58,6 +59,10 @@ func main() {
 		log.Fatalf(
 			"error retrieving Wireguard device '%s' info: %v",
 			*deviceFlag, err)
+	}
+	if len(wgDevice.Peers) < 1 {
+		log.Println("no peers found")
+		os.Exit(0)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
