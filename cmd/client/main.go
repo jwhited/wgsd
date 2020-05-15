@@ -96,13 +96,13 @@ func main() {
 					pubKeyBase64)
 			}
 			var endpointIP net.IP
-			hostA, ok := r.Answer[0].(*dns.A)
+			hostA, ok := r.Extra[0].(*dns.A)
 			if !ok {
-				hostAAAA, ok := r.Answer[0].(*dns.AAAA)
+				hostAAAA, ok := r.Extra[0].(*dns.AAAA)
 				if !ok {
 					log.Printf(
 						"[%s] non-A/AAAA extra in SRV response: %s",
-						pubKeyBase64, r.Extra[0].Header())
+						pubKeyBase64, r.Extra[0].String())
 					continue
 				}
 				endpointIP = hostAAAA.AAAA
