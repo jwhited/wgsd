@@ -76,6 +76,9 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 	// TODO: handle SOA
 	case name == spPrefix && qtype == dns.TypePTR:
 		for _, peer := range device.Peers {
+			if peer.Endpoint == nil {
+				continue
+			}
 			m.Answer = append(m.Answer, &dns.PTR{
 				Hdr: dns.RR_Header{
 					Name:   state.Name(),
