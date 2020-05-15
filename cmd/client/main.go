@@ -73,7 +73,7 @@ func main() {
 			m := &dns.Msg{}
 			question := fmt.Sprintf("%s._wireguard._udp.%s",
 				pubKeyBase32, dns.Fqdn(*dnsZoneFlag))
-			m.SetQuestion(question, dns.TypeSRV).RecursionDesired = false
+			m.SetQuestion(question, dns.TypeSRV)
 			r, _, err := dnsClient.ExchangeContext(srvCtx, m, *dnsServerFlag)
 			srvCancel()
 			if err != nil {
