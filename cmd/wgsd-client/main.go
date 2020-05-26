@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/miekg/dns"
 	"golang.zx2c4.com/wireguard/wgctrl"
@@ -60,7 +61,9 @@ func main() {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		dnsClient := &dns.Client{}
+		dnsClient := &dns.Client{
+			Timeout: time.Second * 5,
+		}
 		for _, peer := range wgDevice.Peers {
 			select {
 			case <-ctx.Done():
@@ -128,7 +131,7 @@ func main() {
 			err = wgClient.ConfigureDevice(*deviceFlag, deviceConfig)
 			if err != nil {
 				log.Printf(
-					"failed to configure peer %s on %s, error: %v",
+					"[%s] failed to configure peer on %s, error: %v",
 					pubKeyBase64, *deviceFlag, err)
 			}
 		}
