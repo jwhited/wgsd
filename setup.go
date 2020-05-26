@@ -36,8 +36,9 @@ func setup(c *caddy.Controller) error {
 
 	client, err := wgctrl.New()
 	if err != nil {
-		return fmt.Errorf("wgsd: error constructing wgctrl client: %v",
-			err)
+		return plugin.Error("wgsd",
+			fmt.Errorf("wgsd: error constructing wgctrl client: %v",
+				err))
 	}
 
 	// Add the Plugin to CoreDNS, so Servers can use it in their plugin chain.
