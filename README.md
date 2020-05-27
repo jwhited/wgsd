@@ -70,20 +70,20 @@ linux/amd64, go1.14.2,
 
 $
 $ dig @127.0.0.1 -p 5353 _wireguard._udp.example.com. PTR +noall +answer +additional
-_wireguard._udp.example.com. 0	IN	PTR	YUTRLED535IGKL7BDLERL6M4VJXSXM3UQQPL4NMSN27MT56AD4HA====._wireguard._udp.example.com.
-_wireguard._udp.example.com. 0	IN	PTR	WMRID55V4ENHXQX2JSTYOYVKICJ5PIHKB2TR7R42SMIU3T5L4I5Q====._wireguard._udp.example.com.
+_wireguard._udp.example.com. 0	IN	PTR	yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com.
+_wireguard._udp.example.com. 0	IN	PTR	wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com.
 $
-$ dig @127.0.0.1 -p 5353 YUTRLED535IGKL7BDLERL6M4VJXSXM3UQQPL4NMSN27MT56AD4HA====._wireguard._udp.example.com. SRV +noall +answer +additional
-yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com. 0	IN SRV 0 0 7777 YUTRLED535IGKL7BDLERL6M4VJXSXM3UQQPL4NMSN27MT56AD4HA====.example.com.
-YUTRLED535IGKL7BDLERL6M4VJXSXM3UQQPL4NMSN27MT56AD4HA====.example.com. 0	IN A 203.0.113.1
+$ dig @127.0.0.1 -p 5353 yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com. SRV +noall +answer +additional
+yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com. 0	IN SRV 0 0 7777 yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====.example.com.
+yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====.example.com. 0	IN A 203.0.113.1
 $
-$ dig @127.0.0.1 -p 5353 WMRID55V4ENHXQX2JSTYOYVKICJ5PIHKB2TR7R42SMIU3T5L4I5Q====._wireguard._udp.example.com. SRV +noall +answer +additional
-wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. 0	IN SRV 0 0 8888 WMRID55V4ENHXQX2JSTYOYVKICJ5PIHKB2TR7R42SMIU3T5L4I5Q====.example.com.
-WMRID55V4ENHXQX2JSTYOYVKICJ5PIHKB2TR7R42SMIU3T5L4I5Q====.example.com. 0	IN A 198.51.100.1
+$ dig @127.0.0.1 -p 5353 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. SRV +noall +answer +additional
+wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. 0	IN SRV 0 0 8888 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====.example.com.
+wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====.example.com. 0	IN A 198.51.100.1
 $
-$ echo YUTRLED535IGKL7BDLERL6M4VJXSXM3UQQPL4NMSN27MT56AD4HA==== | base32 -d | base64
+$ echo yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha==== | base32 -d | base64
 xScVkH3fUGUv4RrJFfmcqm8rs3SEHr41km6+yffAHw4=
-$ echo WMRID55V4ENHXQX2JSTYOYVKICJ5PIHKB2TR7R42SMIU3T5L4I5Q==== | base32 -d | base64
+$ echo wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q==== | base32 -d | base64
 syKB97XhGnvC+kynh2KqQJPXoOoOpx/HmpMRTc+r4js=
 ```
 
