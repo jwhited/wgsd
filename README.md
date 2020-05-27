@@ -81,9 +81,9 @@ $ dig @127.0.0.1 -p 5353 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q===
 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. 0	IN SRV 0 0 8888 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====.example.com.
 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====.example.com. 0	IN A 198.51.100.1
 $
-$ echo yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha==== | base32 -d | base64
+$ echo yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha==== | tr '[:lower:]' '[:upper:]' | base32 -d | base64
 xScVkH3fUGUv4RrJFfmcqm8rs3SEHr41km6+yffAHw4=
-$ echo wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q==== | base32 -d | base64
+$ echo wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q==== | tr '[:lower:]' '[:upper:]' | base32 -d | base64
 syKB97XhGnvC+kynh2KqQJPXoOoOpx/HmpMRTc+r4js=
 ```
 
@@ -91,6 +91,6 @@ syKB97XhGnvC+kynh2KqQJPXoOoOpx/HmpMRTc+r4js=
 Base64 is case-sensitive. While slightly longer, Base32 allows us to store public keys as part of node names in the DNS tree, which are treated as case-insensitive.
 
 ## TODOs
-- [ ] unit tests
+- [x] unit tests
 - [ ] SOA record support
 - [ ] CI & release binaries
