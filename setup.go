@@ -37,7 +37,7 @@ func setup(c *caddy.Controller) error {
 	client, err := wgctrl.New()
 	if err != nil {
 		return plugin.Error("wgsd",
-			fmt.Errorf("wgsd: error constructing wgctrl client: %v",
+			fmt.Errorf("error constructing wgctrl client: %v",
 				err))
 	}
 
