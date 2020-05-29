@@ -1,5 +1,5 @@
 # wgsd
-`wgsd` is a [CoreDNS](https://github.com/coredns/coredns) plugin that provides WireGuard peer information via DNS-SD ([RFC6763](https://tools.ietf.org/html/rfc6763)) semantics. This enables dynamic discovery of WireGuard Endpoint addressing (both IP address and port number) with the added of benefit of NAT-to-NAT WireGuard connectivity where [UDP hole punching](https://en.wikipedia.org/wiki/UDP_hole_punching) is supported.
+`wgsd` is a [CoreDNS](https://github.com/coredns/coredns) plugin that serves WireGuard peer information via DNS-SD ([RFC6763](https://tools.ietf.org/html/rfc6763)) semantics. This enables dynamic discovery of WireGuard Endpoint addressing (both IP address and port number) with the added benefit of NAT-to-NAT WireGuard connectivity where [UDP hole punching](https://en.wikipedia.org/wiki/UDP_hole_punching) is supported.
 
 See [this blog post](https://www.jordanwhited.com/posts/wireguard-endpoint-discovery-nat-traversal/) for a deep dive on the underlying techniques and development thought.
 
@@ -19,26 +19,27 @@ For method #2 you can simply `go build` the contents of [cmd/coredns](cmd/coredn
 
 A basic client is available under [cmd/wgsd-client](cmd/wgsd-client).
 
-## Configuration
+## Configuration Syntax
 
 ```
-.:53 {
-  wgsd <zone> <wg device>
-}
+wgsd ZONE DEVICE
 ```
 
-For example:
+## Querying
+
+Following RFC6763 this plugin provides a listing of peers via PTR records at the namespace `_wireguard._udp.<zone>`. The target for the PTR records is `<base32PubKey>._wireguard._udp.<zone>` which corresponds to SRV records. SRV targets are of the format `<base32PubKey>.<zone>`. When querying the SRV record for a peer, the target A/AAAA records will be included in the "additional" section of the response. Public keys are represented in Base32 rather than Base64 to allow for their use in node names where they are treated as case-insensitive by the DNS.
+
+## Example
+
+This configuration:
 ```
 $ cat Corefile
-.:53 {
+.:5353 {
   wgsd example.com. wg0
 }
 ```
 
-## Querying wgsd
-
-`wgsd` provides a listing of peers via PTR records at the namespace `_wireguard._udp.<zone>`. The target for the PTR records is `<base32PubKey>._wireguard._udp.<zone>` which correspond to SRV and A or AAAA records. When querying the SRV record for a peer, `wgsd` will return the A/AAAA in the "additional" section.
-
+With the following WireGuard peers:
 ```
 $ sudo wg show
 interface: wg0
@@ -57,18 +58,10 @@ peer: syKB97XhGnvC+kynh2KqQJPXoOoOpx/HmpMRTc+r4js=
   allowed ips: 10.0.0.2/32
   latest handshake: 4 days, 15 hours, 8 minutes, 12 seconds ago
   transfer: 1.38 MiB received, 139.42 KiB sent
-$
-$ cat Corefile
-.:5353 {
-  wgsd example.com. wg0
-}
-$ sudo ./coredns &
-[1] 49165
-$ .:5353
-CoreDNS-1.6.9
-linux/amd64, go1.14.2,
+```
 
-$
+Will respond with:
+```
 $ dig @127.0.0.1 -p 5353 _wireguard._udp.example.com. PTR +noall +answer +additional
 _wireguard._udp.example.com. 0	IN	PTR	yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com.
 _wireguard._udp.example.com. 0	IN	PTR	wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com.
@@ -80,15 +73,15 @@ $
 $ dig @127.0.0.1 -p 5353 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. SRV +noall +answer +additional
 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. 0	IN SRV 0 0 8888 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====.example.com.
 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====.example.com. 0	IN A 198.51.100.1
-$
+```
+
+Converting public keys to Base64 with coreutils:
+```
 $ echo yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha==== | tr '[:lower:]' '[:upper:]' | base32 -d | base64
 xScVkH3fUGUv4RrJFfmcqm8rs3SEHr41km6+yffAHw4=
 $ echo wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q==== | tr '[:lower:]' '[:upper:]' | base32 -d | base64
 syKB97XhGnvC+kynh2KqQJPXoOoOpx/HmpMRTc+r4js=
 ```
-
-## Why Base32 for public keys?
-Base64 is case-sensitive. While slightly longer, Base32 allows us to store public keys as part of node names in the DNS tree, which are treated as case-insensitive.
 
 ## TODOs
 - [x] unit tests
