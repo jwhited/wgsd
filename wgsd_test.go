@@ -112,6 +112,19 @@ func TestWGSD(t *testing.T) {
 				test.AAAA(fmt.Sprintf("%s.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
 			},
 		},
+		test.Case{
+			Qname: "nxdomain.example.com.",
+			Qtype: dns.TypeAAAA,
+			Rcode: dns.RcodeNameError,
+			Ns: []dns.RR{
+				test.SOA(soa("example.com.").String()),
+			},
+		},
+		test.Case{
+			Qname: "servfail.notexample.com.",
+			Qtype: dns.TypeAAAA,
+			Rcode: dns.RcodeServerFailure,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%s %s", tc.Qname, dns.TypeToString[tc.Qtype]), func(t *testing.T) {
