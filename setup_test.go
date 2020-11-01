@@ -23,8 +23,13 @@ func TestSetup(t *testing.T) {
 			true,
 		},
 		{
+			"with local ip",
+			"wgsd example.com. wg0 127.0.0.1",
+			false,
+		},
+		{
 			"too many tokens",
-			"wgsd example.com. wg0 extra",
+			"wgsd example.com. wg0 127.0.0.1 extra",
 			true,
 		},
 	}
