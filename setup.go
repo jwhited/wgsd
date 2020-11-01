@@ -2,6 +2,7 @@ package wgsd
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
@@ -29,6 +30,14 @@ func setup(c *caddy.Controller) error {
 	}
 	device := c.Val()
 
+	// parse optional local ip
+	var wgIP net.IP
+	if c.NextArg() {
+		wgIP = net.ParseIP(c.Val())
+	} else {
+		wgIP = getOutboundIP()
+	}
+
 	// return an error if there are more tokens on this line
 	if c.NextArg() {
 		return plugin.Error("wgsd", c.ArgErr())
@@ -48,8 +57,20 @@ func setup(c *caddy.Controller) error {
 			client: client,
 			zone:   zone,
 			device: device,
+			wgIP:   wgIP,
 		}
 	})
 
 	return nil
+}
+
+// Get preferred outbound ip of this machine
+func getOutboundIP() net.IP {
+	conn, err := net.Dial("udp", "1.1.1.1:80")
+	if err != nil {
+		return nil
+	}
+	defer conn.Close()
+
+	return conn.LocalAddr().(*net.UDPAddr).IP
 }
