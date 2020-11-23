@@ -1,7 +1,6 @@
 package wgsd
 
 import (
-	"bytes"
 	"context"
 	"encoding/base32"
 	"fmt"
@@ -24,14 +23,6 @@ func (m *mockClient) Device(d string) (*wgtypes.Device, error) {
 		Name:  d,
 		Peers: m.peers,
 	}, nil
-}
-
-func base32EqualsPubKey(t *testing.T, b32 string, pubKey wgtypes.Key) bool {
-	got, err := base32.StdEncoding.DecodeString(strings.ToUpper(b32))
-	if err != nil {
-		t.Fatalf("error decoding base32 string: %v", err)
-	}
-	return bytes.Equal(pubKey[:], got)
 }
 
 func TestWGSD(t *testing.T) {
@@ -65,7 +56,7 @@ func TestWGSD(t *testing.T) {
 	}
 
 	testCases := []test.Case{
-		test.Case{
+		{
 			Qname: "_wireguard._udp.example.com.",
 			Qtype: dns.TypePTR,
 			Rcode: dns.RcodeSuccess,
@@ -74,7 +65,7 @@ func TestWGSD(t *testing.T) {
 				test.PTR(fmt.Sprintf("_wireguard._udp.example.com. 0 IN PTR %s._wireguard._udp.example.com.", peer2b32)),
 			},
 		},
-		test.Case{
+		{
 			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer1b32),
 			Qtype: dns.TypeSRV,
 			Rcode: dns.RcodeSuccess,
@@ -85,7 +76,7 @@ func TestWGSD(t *testing.T) {
 				test.A(fmt.Sprintf("%s.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
 			},
 		},
-		test.Case{
+		{
 			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer2b32),
 			Qtype: dns.TypeSRV,
 			Rcode: dns.RcodeSuccess,
@@ -96,7 +87,7 @@ func TestWGSD(t *testing.T) {
 				test.AAAA(fmt.Sprintf("%s.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
 			},
 		},
-		test.Case{
+		{
 			Qname: fmt.Sprintf("%s.example.com.", peer1b32),
 			Qtype: dns.TypeA,
 			Rcode: dns.RcodeSuccess,
@@ -104,7 +95,7 @@ func TestWGSD(t *testing.T) {
 				test.A(fmt.Sprintf("%s.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
 			},
 		},
-		test.Case{
+		{
 			Qname: fmt.Sprintf("%s.example.com.", peer2b32),
 			Qtype: dns.TypeAAAA,
 			Rcode: dns.RcodeSuccess,
@@ -112,7 +103,7 @@ func TestWGSD(t *testing.T) {
 				test.AAAA(fmt.Sprintf("%s.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
 			},
 		},
-		test.Case{
+		{
 			Qname: "nxdomain.example.com.",
 			Qtype: dns.TypeAAAA,
 			Rcode: dns.RcodeNameError,
@@ -120,7 +111,7 @@ func TestWGSD(t *testing.T) {
 				test.SOA(soa("example.com.").String()),
 			},
 		},
-		test.Case{
+		{
 			Qname: "servfail.notexample.com.",
 			Qtype: dns.TypeAAAA,
 			Rcode: dns.RcodeServerFailure,
