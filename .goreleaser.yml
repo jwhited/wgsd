@@ -1,0 +1,29 @@
+before:
+  hooks:
+    - go mod download
+builds:
+  - id: coredns
+    main: ./cmd/coredns/main.go
+    binary: coredns
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - 386
+      - arm
+      - arm64
+
+  - id: wgsd-client
+    main: ./cmd/wgsd-client/main.go
+    binary: wgsd-client
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - 386
+      - arm
+      - arm64
