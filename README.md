@@ -4,6 +4,13 @@
 See [this blog post](https://www.jordanwhited.com/posts/wireguard-endpoint-discovery-nat-traversal/) for a deep dive on the underlying techniques and development thought.
 
 ## Installation
+Binary releases are available [here](https://github.com/jwhited/wgsd/releases).
+
+Each release contains 2 binaries:
+* `coredns` - CoreDNS server with all the "internal" plugins + `wgsd`
+* `wgsd-client` - A sample client
+
+## Building from source
 External CoreDNS plugins can be enabled in one of two ways:
 
 1. [Build with compile-time configuration file](https://coredns.io/2017/07/25/compile-time-enabling-or-disabling-plugins/#build-with-compile-time-configuration-file)
@@ -86,4 +93,4 @@ syKB97XhGnvC+kynh2KqQJPXoOoOpx/HmpMRTc+r4js=
 ## TODOs
 - [x] unit tests
 - [ ] SOA record support
-- [ ] CI & release binaries
+- [x] CI & release binaries
