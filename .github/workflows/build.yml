@@ -1,0 +1,24 @@
+name: build
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  build:
+    strategy:
+      matrix:
+        go-version: [1.14.x, 1.15.x]
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build coredns
+        run: go build cmd/coredns/main.go
+      - name: Build wgsd-client
+        run: go build cmd/wgsd-client/main.go
