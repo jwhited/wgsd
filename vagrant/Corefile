@@ -1,0 +1,6 @@
+.:5353 {
+  debug
+  bind 127.0.0.1
+  bind 192.168.100.10
+  wgsd example.com. wg0
+}
