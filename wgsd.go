@@ -37,7 +37,8 @@ type wgctrlClient interface {
 const (
 	keyLen             = 56 // the number of characters in a base32-encoded Wireguard public key
 	spPrefix           = "_wireguard._udp."
-	serviceInstanceLen = keyLen + len(".") + len(spPrefix)
+	spSubPrefix        = "." + spPrefix
+	serviceInstanceLen = keyLen + len(spSubPrefix)
 )
 
 func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
@@ -114,15 +115,14 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 					Priority: 0,
 					Weight:   0,
 					Port:     uint16(endpoint.Port),
-					Target: fmt.Sprintf("%s.%s",
-						strings.ToLower(pubKey), p.zone),
+					Target:   strings.ToLower(pubKey) + spSubPrefix + p.zone,
 				})
 				w.WriteMsg(m) // nolint: errcheck
 				return dns.RcodeSuccess, nil
 			}
 		}
 		return nxDomain(p.zone, w, r)
-	case len(name) == keyLen+1 && (qtype == dns.TypeA ||
+	case len(name) == len(spSubPrefix)+keyLen && (qtype == dns.TypeA ||
 		qtype == dns.TypeAAAA):
 		pubKey := name[:keyLen]
 		for _, peer := range device.Peers {
@@ -148,7 +148,7 @@ func getHostRR(pubKey, zone string, endpoint *net.UDPAddr) dns.RR {
 	if endpoint == nil || endpoint.IP == nil {
 		return nil
 	}
-	name := fmt.Sprintf("%s.%s", strings.ToLower(pubKey), zone)
+	name := strings.ToLower(pubKey) + spSubPrefix + zone
 	switch {
 	case endpoint.IP.To4() != nil:
 		return &dns.A{
