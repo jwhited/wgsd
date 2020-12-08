@@ -70,10 +70,10 @@ func TestWGSD(t *testing.T) {
 			Qtype: dns.TypeSRV,
 			Rcode: dns.RcodeSuccess,
 			Answer: []dns.RR{
-				test.SRV(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN SRV 0 0 1 %s.example.com.", peer1b32, peer1b32)),
+				test.SRV(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN SRV 0 0 1 %s._wireguard._udp.example.com.", peer1b32, peer1b32)),
 			},
 			Extra: []dns.RR{
-				test.A(fmt.Sprintf("%s.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
+				test.A(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
 			},
 		},
 		{
@@ -81,26 +81,26 @@ func TestWGSD(t *testing.T) {
 			Qtype: dns.TypeSRV,
 			Rcode: dns.RcodeSuccess,
 			Answer: []dns.RR{
-				test.SRV(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN SRV 0 0 2 %s.example.com.", peer2b32, peer2b32)),
+				test.SRV(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN SRV 0 0 2 %s._wireguard._udp.example.com.", peer2b32, peer2b32)),
 			},
 			Extra: []dns.RR{
-				test.AAAA(fmt.Sprintf("%s.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
+				test.AAAA(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
 			},
 		},
 		{
-			Qname: fmt.Sprintf("%s.example.com.", peer1b32),
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer1b32),
 			Qtype: dns.TypeA,
 			Rcode: dns.RcodeSuccess,
 			Answer: []dns.RR{
-				test.A(fmt.Sprintf("%s.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
+				test.A(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
 			},
 		},
 		{
-			Qname: fmt.Sprintf("%s.example.com.", peer2b32),
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer2b32),
 			Qtype: dns.TypeAAAA,
 			Rcode: dns.RcodeSuccess,
 			Answer: []dns.RR{
-				test.AAAA(fmt.Sprintf("%s.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
+				test.AAAA(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
 			},
 		},
 		{
