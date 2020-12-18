@@ -40,6 +40,7 @@ func setup(c *caddy.Controller) error {
 			fmt.Errorf("error constructing wgctrl client: %v",
 				err))
 	}
+	c.OnFinalShutdown(client.Close)
 
 	// Add the Plugin to CoreDNS, so Servers can use it in their plugin chain.
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
