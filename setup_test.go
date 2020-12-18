@@ -13,9 +13,39 @@ func TestSetup(t *testing.T) {
 		expectErr bool
 	}{
 		{
-			"valid input",
-			"wgsd example.com. wg0",
+			"valid input b32",
+			"wgsd example.com. wg0 b32",
 			false,
+		},
+		{
+			"valid input sha1",
+			"wgsd example.com. wg0 sha1",
+			false,
+		},
+		{
+			"valid input hex",
+			"wgsd example.com. wg0 hex",
+			false,
+		},
+		{
+			"valid input sha1 truncate",
+			"wgsd example.com. wg0 sha1:7",
+			false,
+		},
+		{
+			"valid input hex truncate",
+			"wgsd example.com. wg0 hex:7",
+			false,
+		},
+		{
+			"valid input hex truncate",
+			"wgsd example.com. wg0 hex:-1",
+			true,
+		},
+		{
+			"invalid input b32 truncate",
+			"wgsd example.com. wg0 b32:7",
+			true,
 		},
 		{
 			"missing token",
@@ -24,7 +54,7 @@ func TestSetup(t *testing.T) {
 		},
 		{
 			"too many tokens",
-			"wgsd example.com. wg0 extra",
+			"wgsd example.com. wg0 b32 extra",
 			true,
 		},
 	}

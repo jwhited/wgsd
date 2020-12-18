@@ -11,6 +11,7 @@ import (
 	"github.com/coredns/coredns/plugin/pkg/dnstest"
 	"github.com/coredns/coredns/plugin/test"
 	"github.com/miekg/dns"
+	"github.com/stretchr/testify/require"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
@@ -26,8 +27,8 @@ func (m *mockClient) Device(d string) (*wgtypes.Device, error) {
 }
 
 func TestWGSD(t *testing.T) {
-	key1 := [32]byte{}
-	key1[0] = 1
+	key1, err := wgtypes.ParseKey("JeZlz14G8tg1Bqh6apteFCwVhNhpexJ19FDPfuxQtUY=")
+	require.NoError(t, err)
 	peer1 := wgtypes.Peer{
 		Endpoint: &net.UDPAddr{
 			IP:   net.ParseIP("1.1.1.1"),
@@ -36,8 +37,9 @@ func TestWGSD(t *testing.T) {
 		PublicKey: key1,
 	}
 	peer1b32 := strings.ToLower(base32.StdEncoding.EncodeToString(peer1.PublicKey[:]))
-	key2 := [32]byte{}
-	key2[0] = 2
+
+	key2, err := wgtypes.ParseKey("xScVkH3fUGUv4RrJFfmcqm8rs3SEHr41km6+yffAHw4=")
+	require.NoError(t, err)
 	peer2 := wgtypes.Peer{
 		Endpoint: &net.UDPAddr{
 			IP:   net.ParseIP("::2"),
@@ -46,6 +48,9 @@ func TestWGSD(t *testing.T) {
 		PublicKey: key2,
 	}
 	peer2b32 := strings.ToLower(base32.StdEncoding.EncodeToString(peer2.PublicKey[:]))
+
+	enc, err := getEncoder("b32")
+	require.NoError(t, err)
 	p := &WGSD{
 		Next: test.ErrorHandler(),
 		client: &mockClient{
@@ -53,6 +58,7 @@ func TestWGSD(t *testing.T) {
 		},
 		zone:   "example.com.",
 		device: "wg0",
+		enc:    enc,
 	}
 
 	testCases := []test.Case{
@@ -122,25 +128,22 @@ func TestWGSD(t *testing.T) {
 			m := tc.Msg()
 			rec := dnstest.NewRecorder(&test.ResponseWriter{})
 			ctx := context.TODO()
+
 			_, err := p.ServeDNS(ctx, rec, m)
-			if err != nil {
-				t.Errorf("Expected no error, got %v", err)
-				return
-			}
+			require.NoError(t, err)
+
 			resp := rec.Msg
-			if err := test.Header(tc, resp); err != nil {
-				t.Error(err)
-				return
-			}
-			if err := test.Section(tc, test.Answer, resp.Answer); err != nil {
-				t.Error(err)
-			}
-			if err := test.Section(tc, test.Ns, resp.Ns); err != nil {
-				t.Error(err)
-			}
-			if err := test.Section(tc, test.Extra, resp.Extra); err != nil {
-				t.Error(err)
-			}
+			err = test.Header(tc, resp)
+			require.NoError(t, err)
+
+			err = test.Section(tc, test.Answer, resp.Answer)
+			require.NoError(t, err)
+
+			err = test.Section(tc, test.Ns, resp.Ns)
+			require.NoError(t, err)
+
+			err = test.Section(tc, test.Extra, resp.Extra)
+			require.NoError(t, err)
 		})
 	}
 }

@@ -29,12 +29,25 @@ A basic client is available under [cmd/wgsd-client](cmd/wgsd-client).
 ## Configuration Syntax
 
 ```
-wgsd ZONE DEVICE
+wgsd ZONE DEVICE ENCODING
 ```
 
 ## Querying
 
-Following RFC6763 this plugin provides a listing of peers via PTR records at the namespace `_wireguard._udp.<zone>`. The target for the PTR records is `<base32PubKey>._wireguard._udp.<zone>` which corresponds to SRV records. SRV targets are of the format `<base32PubKey>.<zone>`. When querying the SRV record for a peer, the target A/AAAA records will be included in the "additional" section of the response. Public keys are represented in Base32 rather than Base64 to allow for their use in node names where they are treated as case-insensitive by the DNS.
+Following RFC6763 this plugin provides a listing of peers via PTR records at the namespace `_wireguard._udp.<zone>`. The target for the PTR records is `<$encodingPubKey>._wireguard._udp.<zone>` which corresponds to SRV records. SRV targets are of the format `<base32PubKey>.<zone>`. When querying the SRV record for a peer, the target A/AAAA records will be included in the "additional" section of the response. Public keys are represented in the chosen encoding rather than original Base64 human representation to allow for their use in node names where they are treated as case-insensitive by the DNS.
+
+The supported encoding settings are:
+* base32 `b32`
+* hexadecimal `hex`
+* sha1 `sha1`
+
+Truncation, for example route53 restricts its record maximum size, to keep consistency with these setup limitation, wgsd supports truncation. This truncation could be compared to a short git sha1. 
+
+The supported encoding truncation are:
+* hexadecimal - e.g.: `hex:7`
+* sha1 - e.g: `sha1:9`
+
+Note that the sha1 and truncation allows to obfuscate peers public keys. 
 
 ## Example
 
@@ -42,7 +55,7 @@ This configuration:
 ```
 $ cat Corefile
 .:5353 {
-  wgsd example.com. wg0
+  wgsd example.com. wg0 b32
 }
 ```
 

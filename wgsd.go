@@ -2,7 +2,6 @@ package wgsd
 
 import (
 	"context"
-	"encoding/base32"
 	"fmt"
 	"net"
 	"strings"
@@ -28,6 +27,9 @@ type WGSD struct {
 	zone string
 	// the Wireguard device name, e.g. wg0
 	device string
+
+	// the encoder used to encode wireguard peer public keys
+	enc encoder
 }
 
 type wgctrlClient interface {
@@ -35,9 +37,7 @@ type wgctrlClient interface {
 }
 
 const (
-	keyLen             = 56 // the number of characters in a base32-encoded Wireguard public key
-	spPrefix           = "_wireguard._udp."
-	serviceInstanceLen = keyLen + len(".") + len(spPrefix)
+	spPrefix = "_wireguard._udp."
 )
 
 func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
@@ -68,7 +68,7 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 	}
 
 	// setup our reply message
-	m := new(dns.Msg)
+	m := &dns.Msg{}
 	m.SetReply(r)
 	m.Authoritative = true
 
@@ -87,56 +87,55 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 					Ttl:    0,
 				},
 				Ptr: fmt.Sprintf("%s.%s%s",
-					strings.ToLower(base32.StdEncoding.EncodeToString(peer.PublicKey[:])),
+					strings.ToLower(p.enc.EncodeToString(peer.PublicKey[:])),
 					spPrefix, p.zone),
 			})
 		}
-		w.WriteMsg(m) // nolint: errcheck
+		_ = w.WriteMsg(m)
 		return dns.RcodeSuccess, nil
-	case len(name) == serviceInstanceLen && qtype == dns.TypeSRV:
-		pubKey := name[:keyLen]
+	case qtype == dns.TypeSRV:
+		pubKey := strings.TrimSuffix(name, "."+spPrefix)
 		for _, peer := range device.Peers {
-			if strings.EqualFold(
-				base32.StdEncoding.EncodeToString(peer.PublicKey[:]), pubKey) {
-				endpoint := peer.Endpoint
-				hostRR := getHostRR(pubKey, p.zone, endpoint)
-				if hostRR == nil {
-					return nxDomain(p.zone, w, r)
-				}
-				m.Extra = append(m.Extra, hostRR)
-				m.Answer = append(m.Answer, &dns.SRV{
-					Hdr: dns.RR_Header{
-						Name:   state.Name(),
-						Rrtype: dns.TypeSRV,
-						Class:  dns.ClassINET,
-						Ttl:    0,
-					},
-					Priority: 0,
-					Weight:   0,
-					Port:     uint16(endpoint.Port),
-					Target: fmt.Sprintf("%s.%s",
-						strings.ToLower(pubKey), p.zone),
-				})
-				w.WriteMsg(m) // nolint: errcheck
-				return dns.RcodeSuccess, nil
+			if !strings.EqualFold(p.enc.EncodeToString(peer.PublicKey[:]), pubKey) {
+				continue
 			}
+			endpoint := peer.Endpoint
+			hostRR := getHostRR(pubKey, p.zone, endpoint)
+			if hostRR == nil {
+				return nxDomain(p.zone, w, r)
+			}
+			m.Extra = append(m.Extra, hostRR)
+			m.Answer = append(m.Answer, &dns.SRV{
+				Hdr: dns.RR_Header{
+					Name:   state.Name(),
+					Rrtype: dns.TypeSRV,
+					Class:  dns.ClassINET,
+					Ttl:    0,
+				},
+				Priority: 0,
+				Weight:   0,
+				Port:     uint16(endpoint.Port),
+				Target: fmt.Sprintf("%s.%s",
+					strings.ToLower(pubKey), p.zone),
+			})
+			_ = w.WriteMsg(m)
+			return dns.RcodeSuccess, nil
 		}
 		return nxDomain(p.zone, w, r)
-	case len(name) == keyLen+1 && (qtype == dns.TypeA ||
-		qtype == dns.TypeAAAA):
-		pubKey := name[:keyLen]
+	case qtype == dns.TypeA || qtype == dns.TypeAAAA:
+		pubKey := strings.TrimSuffix(name, ".")
 		for _, peer := range device.Peers {
-			if strings.EqualFold(
-				base32.StdEncoding.EncodeToString(peer.PublicKey[:]), pubKey) {
-				endpoint := peer.Endpoint
-				hostRR := getHostRR(pubKey, p.zone, endpoint)
-				if hostRR == nil {
-					return nxDomain(p.zone, w, r)
-				}
-				m.Answer = append(m.Answer, hostRR)
-				w.WriteMsg(m) // nolint: errcheck
-				return dns.RcodeSuccess, nil
+			if !strings.EqualFold(p.enc.EncodeToString(peer.PublicKey[:]), pubKey) {
+				continue
 			}
+			endpoint := peer.Endpoint
+			hostRR := getHostRR(pubKey, p.zone, endpoint)
+			if hostRR == nil {
+				return nxDomain(p.zone, w, r)
+			}
+			m.Answer = append(m.Answer, hostRR)
+			_ = w.WriteMsg(m)
+			return dns.RcodeSuccess, nil
 		}
 		return nxDomain(p.zone, w, r)
 	default:
@@ -182,7 +181,7 @@ func nxDomain(zone string, w dns.ResponseWriter, r *dns.Msg) (int, error) {
 	m.Authoritative = true
 	m.Rcode = dns.RcodeNameError
 	m.Ns = []dns.RR{soa(zone)}
-	w.WriteMsg(m) // nolint: errcheck
+	_ = w.WriteMsg(m)
 	return dns.RcodeSuccess, nil
 }
 
