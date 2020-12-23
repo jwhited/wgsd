@@ -35,10 +35,12 @@ type wgctrlClient interface {
 }
 
 const (
-	keyLen             = 56 // the number of characters in a base32-encoded Wireguard public key
-	spPrefix           = "_wireguard._udp."
-	serviceInstanceLen = keyLen + len(".") + len(spPrefix)
+	keyLen      = 56 // the number of characters in a base32-encoded Wireguard public key
+	spPrefix    = "_wireguard._udp."
+	spSubPrefix = "." + spPrefix
 )
+
+var emptySubnet = net.IPNet{IP: net.IPv4zero, Mask: net.IPv4Mask(0, 0, 0, 0)}
 
 func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 	r *dns.Msg) (int, error) {
@@ -93,36 +95,64 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 		}
 		w.WriteMsg(m) // nolint: errcheck
 		return dns.RcodeSuccess, nil
-	case len(name) == serviceInstanceLen && qtype == dns.TypeSRV:
-		pubKey := name[:keyLen]
+	case qtype == dns.TypeSRV && strings.HasSuffix(name, spSubPrefix):
+		name = name[:len(name)-len(spSubPrefix)]
+		logger.Debugf("received query for: %s type: %s", name,
+			dns.TypeToString[qtype])
 		for _, peer := range device.Peers {
-			if strings.EqualFold(
-				base32.StdEncoding.EncodeToString(peer.PublicKey[:]), pubKey) {
-				endpoint := peer.Endpoint
-				hostRR := getHostRR(pubKey, p.zone, endpoint)
-				if hostRR == nil {
-					return nxDomain(p.zone, w, r)
-				}
-				m.Extra = append(m.Extra, hostRR)
-				m.Answer = append(m.Answer, &dns.SRV{
-					Hdr: dns.RR_Header{
-						Name:   state.Name(),
-						Rrtype: dns.TypeSRV,
-						Class:  dns.ClassINET,
-						Ttl:    0,
-					},
-					Priority: 0,
-					Weight:   0,
-					Port:     uint16(endpoint.Port),
-					Target: fmt.Sprintf("%s.%s",
-						strings.ToLower(pubKey), p.zone),
-				})
-				w.WriteMsg(m) // nolint: errcheck
-				return dns.RcodeSuccess, nil
+			pubKey := base32.StdEncoding.EncodeToString(peer.PublicKey[:])
+			allowedIPs := &emptySubnet
+			if len(peer.AllowedIPs) >= 1 {
+				allowedIPs = &peer.AllowedIPs[0]
 			}
+			if len(name) == keyLen {
+				// check by keyname
+				if !strings.EqualFold(pubKey, name[:keyLen]) {
+					continue
+				}
+			} else {
+				// check by ip
+				ip := net.ParseIP(name)
+				if ip == nil || !allowedIPs.Contains(ip) {
+					continue
+				}
+			}
+			endpoint := peer.Endpoint
+			hostRR := getHostRR(pubKey, p.zone, endpoint)
+			if hostRR == nil {
+				return nxDomain(p.zone, w, r)
+			}
+			m.Extra = append(m.Extra, hostRR)
+			pubKey = strings.ToLower(pubKey)
+			m.Extra = append(m.Extra, &dns.TXT{
+				Hdr: dns.RR_Header{
+					Name:   state.Name(),
+					Rrtype: dns.TypeTXT,
+					Class:  dns.ClassINET,
+					Ttl:    0,
+				},
+				Txt: []string{
+					"allowedip=" + allowedIPs.String(),
+					"pubkey=" + strings.TrimRight(pubKey, "="),
+				},
+			})
+			m.Answer = append(m.Answer, &dns.SRV{
+				Hdr: dns.RR_Header{
+					Name:   state.Name(),
+					Rrtype: dns.TypeSRV,
+					Class:  dns.ClassINET,
+					Ttl:    0,
+				},
+				Priority: 0,
+				Weight:   0,
+				Port:     uint16(endpoint.Port),
+				Target:   pubKey + spSubPrefix + p.zone,
+			})
+			w.WriteMsg(m) // nolint: errcheck
+			return dns.RcodeSuccess, nil
 		}
 		return nxDomain(p.zone, w, r)
-	case len(name) == keyLen+1 && (qtype == dns.TypeA ||
+	case len(name) == len(spSubPrefix)+keyLen && (qtype == dns.TypeA ||
 		qtype == dns.TypeAAAA):
 		pubKey := name[:keyLen]
 		for _, peer := range device.Peers {
@@ -148,7 +178,7 @@ func getHostRR(pubKey, zone string, endpoint *net.UDPAddr) dns.RR {
 	if endpoint == nil || endpoint.IP == nil {
 		return nil
 	}
-	name := fmt.Sprintf("%s.%s", strings.ToLower(pubKey), zone)
+	name := strings.ToLower(pubKey) + spSubPrefix + zone
 	switch {
 	case endpoint.IP.To4() != nil:
 		return &dns.A{

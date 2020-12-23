@@ -1,0 +1,11 @@
+Quick start instructions
+
+Clone & build wgsd:
+~# go get github.com/jwhited/wgsd
+
+Start and provision VMs with Vagrant:
+~# cd ~/go/src/github.com/jwhited/wgsd/vagrant
+~# vagrant up
+
+Setup Wireguard Mesh:
+~# ./setup.sh

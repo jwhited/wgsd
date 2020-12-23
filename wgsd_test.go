@@ -28,22 +28,26 @@ func (m *mockClient) Device(d string) (*wgtypes.Device, error) {
 func TestWGSD(t *testing.T) {
 	key1 := [32]byte{}
 	key1[0] = 1
+	_, allowedip1, _ := net.ParseCIDR("2.2.2.2/32")
 	peer1 := wgtypes.Peer{
 		Endpoint: &net.UDPAddr{
 			IP:   net.ParseIP("1.1.1.1"),
 			Port: 1,
 		},
-		PublicKey: key1,
+		AllowedIPs: []net.IPNet{*allowedip1},
+		PublicKey:  key1,
 	}
 	peer1b32 := strings.ToLower(base32.StdEncoding.EncodeToString(peer1.PublicKey[:]))
 	key2 := [32]byte{}
 	key2[0] = 2
+	_, allowedip2, _ := net.ParseCIDR("::3/128")
 	peer2 := wgtypes.Peer{
 		Endpoint: &net.UDPAddr{
 			IP:   net.ParseIP("::2"),
 			Port: 2,
 		},
-		PublicKey: key2,
+		AllowedIPs: []net.IPNet{*allowedip2},
+		PublicKey:  key2,
 	}
 	peer2b32 := strings.ToLower(base32.StdEncoding.EncodeToString(peer2.PublicKey[:]))
 	p := &WGSD{
@@ -70,10 +74,11 @@ func TestWGSD(t *testing.T) {
 			Qtype: dns.TypeSRV,
 			Rcode: dns.RcodeSuccess,
 			Answer: []dns.RR{
-				test.SRV(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN SRV 0 0 1 %s.example.com.", peer1b32, peer1b32)),
+				test.SRV(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN SRV 0 0 1 %s._wireguard._udp.example.com.", peer1b32, peer1b32)),
 			},
 			Extra: []dns.RR{
-				test.A(fmt.Sprintf("%s.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
+				test.A(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
+				test.TXT(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN TXT allowedip=%s pubkey=%s", peer1b32, peer1.AllowedIPs[0].String(), strings.TrimRight(peer1b32, "="))),
 			},
 		},
 		{
@@ -81,26 +86,27 @@ func TestWGSD(t *testing.T) {
 			Qtype: dns.TypeSRV,
 			Rcode: dns.RcodeSuccess,
 			Answer: []dns.RR{
-				test.SRV(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN SRV 0 0 2 %s.example.com.", peer2b32, peer2b32)),
+				test.SRV(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN SRV 0 0 2 %s._wireguard._udp.example.com.", peer2b32, peer2b32)),
 			},
 			Extra: []dns.RR{
-				test.AAAA(fmt.Sprintf("%s.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
+				test.AAAA(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
+				test.TXT(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN TXT allowedip=%s pubkey=%s", peer2b32, peer2.AllowedIPs[0].String(), strings.TrimRight(peer2b32, "="))),
 			},
 		},
 		{
-			Qname: fmt.Sprintf("%s.example.com.", peer1b32),
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer1b32),
 			Qtype: dns.TypeA,
 			Rcode: dns.RcodeSuccess,
 			Answer: []dns.RR{
-				test.A(fmt.Sprintf("%s.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
+				test.A(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
 			},
 		},
 		{
-			Qname: fmt.Sprintf("%s.example.com.", peer2b32),
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer2b32),
 			Qtype: dns.TypeAAAA,
 			Rcode: dns.RcodeSuccess,
 			Answer: []dns.RR{
-				test.AAAA(fmt.Sprintf("%s.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
+				test.AAAA(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
 			},
 		},
 		{
