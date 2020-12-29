@@ -34,7 +34,7 @@ wgsd ZONE DEVICE
 
 ## Querying
 
-Following RFC6763 this plugin provides a listing of peers via PTR records at the namespace `_wireguard._udp.<zone>`. The target for the PTR records is `<base32PubKey>._wireguard._udp.<zone>` which corresponds to SRV records. SRV targets are of the format `<base32PubKey>.<zone>`. When querying the SRV record for a peer, the target A/AAAA records will be included in the "additional" section of the response. Public keys are represented in Base32 rather than Base64 to allow for their use in node names where they are treated as case-insensitive by the DNS.
+Following RFC6763 this plugin provides a listing of peers via PTR records at the namespace `_wireguard._udp.<zone>`. The target for the PTR records is of the format  `<base32PubKey>._wireguard._udp.<zone>`. This same format is used for the accompanying SRV and A/AAAA records. When querying the SRV record for a peer, the target A/AAAA records will be included in the "additional" section of the response. Public keys are represented in Base32 rather than Base64 to allow for their use in node names where they are treated as case-insensitive by the DNS.
 
 ## Example
 
