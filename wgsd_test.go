@@ -3,6 +3,7 @@ package wgsd
 import (
 	"context"
 	"encoding/base32"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"strings"
@@ -25,27 +26,50 @@ func (m *mockClient) Device(d string) (*wgtypes.Device, error) {
 	}, nil
 }
 
+func constructAllowedIPs(t *testing.T, prefixes []string) ([]net.IPNet, string) {
+	var allowed []net.IPNet
+	var allowedString string
+	for i, s := range prefixes {
+		_, prefix, err := net.ParseCIDR(s)
+		if err != nil {
+			t.Fatalf("error parsing cidr: %v", err)
+		}
+		allowed = append(allowed, *prefix)
+		if i != 0 {
+			allowedString += ","
+		}
+		allowedString += prefix.String()
+	}
+	return allowed, allowedString
+}
+
 func TestWGSD(t *testing.T) {
 	key1 := [32]byte{}
 	key1[0] = 1
+	peer1Allowed, peer1AllowedString := constructAllowedIPs(t, []string{"10.0.0.1/32", "10.0.0.2/32"})
 	peer1 := wgtypes.Peer{
 		Endpoint: &net.UDPAddr{
 			IP:   net.ParseIP("1.1.1.1"),
 			Port: 1,
 		},
-		PublicKey: key1,
+		PublicKey:  key1,
+		AllowedIPs: peer1Allowed,
 	}
 	peer1b32 := strings.ToLower(base32.StdEncoding.EncodeToString(peer1.PublicKey[:]))
+	peer1b64 := base64.StdEncoding.EncodeToString(peer1.PublicKey[:])
 	key2 := [32]byte{}
 	key2[0] = 2
+	peer2Allowed, peer2AllowedString := constructAllowedIPs(t, []string{"10.0.0.3/32", "10.0.0.4/32"})
 	peer2 := wgtypes.Peer{
 		Endpoint: &net.UDPAddr{
 			IP:   net.ParseIP("::2"),
 			Port: 2,
 		},
-		PublicKey: key2,
+		PublicKey:  key2,
+		AllowedIPs: peer2Allowed,
 	}
 	peer2b32 := strings.ToLower(base32.StdEncoding.EncodeToString(peer2.PublicKey[:]))
+	peer2b64 := base64.StdEncoding.EncodeToString(peer2.PublicKey[:])
 	p := &WGSD{
 		Next: test.ErrorHandler(),
 		client: &mockClient{
@@ -74,6 +98,7 @@ func TestWGSD(t *testing.T) {
 			},
 			Extra: []dns.RR{
 				test.A(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN A %s", peer1b32, peer1.Endpoint.IP.String())),
+				test.TXT(fmt.Sprintf(`%s._wireguard._udp.example.com. 0 IN TXT "txtvers=%d" "pub=%s" "allowed=%s"`, peer1b32, txtVersion, peer1b64, peer1AllowedString)),
 			},
 		},
 		{
@@ -85,6 +110,7 @@ func TestWGSD(t *testing.T) {
 			},
 			Extra: []dns.RR{
 				test.AAAA(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
+				test.TXT(fmt.Sprintf(`%s._wireguard._udp.example.com. 0 IN TXT "txtvers=%d" "pub=%s" "allowed=%s"`, peer2b32, txtVersion, peer2b64, peer2AllowedString)),
 			},
 		},
 		{
@@ -101,6 +127,22 @@ func TestWGSD(t *testing.T) {
 			Rcode: dns.RcodeSuccess,
 			Answer: []dns.RR{
 				test.AAAA(fmt.Sprintf("%s._wireguard._udp.example.com. 0 IN AAAA %s", peer2b32, peer2.Endpoint.IP.String())),
+			},
+		},
+		{
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer1b32),
+			Qtype: dns.TypeTXT,
+			Rcode: dns.RcodeSuccess,
+			Answer: []dns.RR{
+				test.TXT(fmt.Sprintf(`%s._wireguard._udp.example.com. 0 IN TXT "txtvers=%d" "pub=%s" "allowed=%s"`, peer1b32, txtVersion, peer1b64, peer1AllowedString)),
+			},
+		},
+		{
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer2b32),
+			Qtype: dns.TypeTXT,
+			Rcode: dns.RcodeSuccess,
+			Answer: []dns.RR{
+				test.TXT(fmt.Sprintf(`%s._wireguard._udp.example.com. 0 IN TXT "txtvers=%d" "pub=%s" "allowed=%s"`, peer2b32, txtVersion, peer2b64, peer2AllowedString)),
 			},
 		},
 		{
