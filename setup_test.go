@@ -1,6 +1,8 @@
 package wgsd
 
 import (
+	"net"
+	"reflect"
 	"testing"
 
 	"github.com/coredns/caddy"
@@ -12,7 +14,7 @@ func TestSetup(t *testing.T) {
 		input                string
 		expectErr            bool
 		expectSelfAllowedIPs []string
-		expectSelfEndpoint   []string
+		expectSelfEndpoint   *net.UDPAddr
 	}{
 		{
 			"valid input",
@@ -41,7 +43,7 @@ func TestSetup(t *testing.T) {
 						self-allowed-ips 10.0.0.1/32 10.0.0.2/32
 					}`,
 			false,
-			nil,
+			[]string{"10.0.0.1/32", "10.0.0.2/32"},
 			nil,
 		},
 		{
@@ -60,7 +62,7 @@ func TestSetup(t *testing.T) {
 					}`,
 			false,
 			nil,
-			nil,
+			&net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 51820},
 		},
 		{
 			"invalid self-endpoint",
@@ -78,20 +80,34 @@ func TestSetup(t *testing.T) {
 						self-endpoint 127.0.0.1:51820
 					}`,
 			false,
-			nil,
-			nil,
+			[]string{"10.0.0.1/32", "10.0.0.2/32"},
+			&net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 51820},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			c := caddy.NewTestController("dns", tc.input)
-			err := setup(c)
+			wgsd, err := parse(c)
 			if (err != nil) != tc.expectErr {
 				t.Fatalf("expectErr: %v, got err=%v", tc.expectErr, err)
 			}
 			if tc.expectErr {
 				return
+			}
+			if !reflect.DeepEqual(wgsd.selfEndpoint, tc.expectSelfEndpoint) {
+				t.Errorf("expected self-endpoint %s but found: %s", tc.expectSelfEndpoint, wgsd.selfEndpoint)
+			}
+			var expectSelfAllowedIPs []net.IPNet
+			if tc.expectSelfAllowedIPs != nil {
+				expectSelfAllowedIPs = make([]net.IPNet, 0)
+				for _, s := range tc.expectSelfAllowedIPs {
+					_, p, _ := net.ParseCIDR(s)
+					expectSelfAllowedIPs = append(expectSelfAllowedIPs, *p)
+				}
+			}
+			if !reflect.DeepEqual(wgsd.selfAllowedIPs, expectSelfAllowedIPs) {
+				t.Errorf("expected self-allowed-ips %s but found: %s", expectSelfAllowedIPs, wgsd.selfAllowedIPs)
 			}
 		})
 	}

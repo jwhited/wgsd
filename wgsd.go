@@ -50,7 +50,7 @@ const (
 	serviceInstanceLen = keyLen + len(spSubPrefix)
 )
 
-type handlerFn func(ctx context.Context, state request.Request, peers []wgtypes.Peer) (int, error)
+type handlerFn func(state request.Request, peers []wgtypes.Peer) (int, error)
 
 func getHandlerFn(queryType uint16, name string) handlerFn {
 	switch {
@@ -66,8 +66,7 @@ func getHandlerFn(queryType uint16, name string) handlerFn {
 	}
 }
 
-func handlePTR(ctx context.Context, state request.Request,
-	peers []wgtypes.Peer) (int, error) {
+func handlePTR(state request.Request, peers []wgtypes.Peer) (int, error) {
 	m := new(dns.Msg)
 	m.SetReply(state.Req)
 	m.Authoritative = true
@@ -91,8 +90,7 @@ func handlePTR(ctx context.Context, state request.Request,
 	return dns.RcodeSuccess, nil
 }
 
-func handleSRV(ctx context.Context, state request.Request,
-	peers []wgtypes.Peer) (int, error) {
+func handleSRV(state request.Request, peers []wgtypes.Peer) (int, error) {
 	m := new(dns.Msg)
 	m.SetReply(state.Req)
 	m.Authoritative = true
@@ -126,8 +124,7 @@ func handleSRV(ctx context.Context, state request.Request,
 	return nxDomain(state)
 }
 
-func handleHostOrTXT(ctx context.Context, state request.Request,
-	peers []wgtypes.Peer) (int, error) {
+func handleHostOrTXT(state request.Request, peers []wgtypes.Peer) (int, error) {
 	m := new(dns.Msg)
 	m.SetReply(state.Req)
 	m.Authoritative = true
@@ -212,7 +209,7 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 		return dns.RcodeServerFailure, err
 	}
 
-	return handler(ctx, state, peers)
+	return handler(state, peers)
 }
 
 func getHostRR(name string, endpoint *net.UDPAddr) dns.RR {
