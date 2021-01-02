@@ -29,6 +29,10 @@ type WGSD struct {
 	zone string
 	// the WireGuard device name, e.g. wg0
 	device string
+	// overrides the self endpoint value
+	selfEndpoint *net.UDPAddr
+	// self allowed IPs
+	selfAllowedIPs []net.IPNet
 }
 
 type wgctrlClient interface {
@@ -145,6 +149,36 @@ func handleHostOrTXT(ctx context.Context, state request.Request,
 	return nxDomain(state)
 }
 
+func (p *WGSD) getSelfPeer(device *wgtypes.Device, state request.Request) (wgtypes.Peer, error) {
+	self := wgtypes.Peer{
+		PublicKey: device.PublicKey,
+	}
+	if p.selfEndpoint != nil {
+		self.Endpoint = p.selfEndpoint
+	} else {
+		self.Endpoint = &net.UDPAddr{
+			IP:   net.ParseIP(state.LocalIP()),
+			Port: device.ListenPort,
+		}
+	}
+	self.AllowedIPs = p.selfAllowedIPs
+	return self, nil
+}
+
+func (p *WGSD) getPeers(state request.Request) ([]wgtypes.Peer, error) {
+	peers := make([]wgtypes.Peer, 0)
+	device, err := p.client.Device(p.device)
+	if err != nil {
+		return nil, err
+	}
+	peers = append(peers, device.Peers...)
+	self, err := p.getSelfPeer(device, state)
+	if err != nil {
+		return nil, err
+	}
+	return append(peers, self), nil
+}
+
 func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 	r *dns.Msg) (int, error) {
 	// request.Request is a convenience struct we wrap around the msg and
@@ -169,15 +203,12 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 		return nxDomain(state)
 	}
 
-	device, err := p.client.Device(p.device)
+	peers, err := p.getPeers(state)
 	if err != nil {
 		return dns.RcodeServerFailure, err
 	}
-	if len(device.Peers) == 0 {
-		return nxDomain(state)
-	}
 
-	return handler(ctx, state, device.Peers)
+	return handler(ctx, state, peers)
 }
 
 func getHostRR(name string, endpoint *net.UDPAddr) dns.RR {
