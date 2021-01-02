@@ -16,11 +16,11 @@ import (
 )
 
 type mockClient struct {
-	device *wgtypes.Device
+	devices map[string]*wgtypes.Device
 }
 
 func (m *mockClient) Device(d string) (*wgtypes.Device, error) {
-	return m.device, nil
+	return m.devices[d], nil
 }
 
 func constructAllowedIPs(t *testing.T, prefixes []string) ([]net.IPNet, string) {
@@ -74,17 +74,27 @@ func TestWGSD(t *testing.T) {
 	peer2b64 := base64.StdEncoding.EncodeToString(peer2.PublicKey[:])
 	p := &WGSD{
 		Next: test.ErrorHandler(),
-		client: &mockClient{
-			device: &wgtypes.Device{
-				Name:       "wg0",
-				PublicKey:  selfKey,
-				ListenPort: 51820,
-				Peers:      []wgtypes.Peer{peer1, peer2},
+		Zones: Zones{
+			Names: []string{"example.com."},
+			Z: map[string]*Zone{
+				"example.com.": {
+					name:           "example.com.",
+					device:         "wg0",
+					serveSelf:      true,
+					selfAllowedIPs: selfAllowed,
+				},
 			},
 		},
-		zone:           "example.com.",
-		device:         "wg0",
-		selfAllowedIPs: selfAllowed,
+		client: &mockClient{
+			devices: map[string]*wgtypes.Device{
+				"wg0": {
+					Name:       "wg0",
+					PublicKey:  selfKey,
+					ListenPort: 51820,
+					Peers:      []wgtypes.Peer{peer1, peer2},
+				},
+			},
+		},
 	}
 
 	testCases := []test.Case{

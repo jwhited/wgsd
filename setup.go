@@ -16,64 +16,77 @@ func init() {
 	plugin.Register(pluginName, setup)
 }
 
-const (
-	optionSelfAllowedIPs = "self-allowed-ips"
-	optionSelfEndpoint   = "self-endpoint"
-)
+func parse(c *caddy.Controller) (Zones, error) {
+	z := make(map[string]*Zone)
+	names := []string{}
 
-func parse(c *caddy.Controller) (*WGSD, error) {
-	p := &WGSD{}
 	for c.Next() {
+		// wgsd zone device
 		args := c.RemainingArgs()
 		if len(args) != 2 {
-			return nil, fmt.Errorf("expected 2 args, got %d", len(args))
+			return Zones{}, fmt.Errorf("expected 2 args, got %d", len(args))
 		}
-		p.zone = dns.Fqdn(args[0])
-		p.device = args[1]
+		zone := &Zone{
+			name:   dns.Fqdn(args[0]),
+			device: args[1],
+		}
+		names = append(names, zone.name)
+		_, ok := z[zone.name]
+		if ok {
+			return Zones{}, fmt.Errorf("duplicate zone name %s",
+				zone.name)
+		}
+		z[zone.name] = zone
 
 		for c.NextBlock() {
 			switch c.Val() {
-			case optionSelfAllowedIPs:
-				p.selfAllowedIPs = make([]net.IPNet, 0)
-				for _, aip := range c.RemainingArgs() {
-					_, prefix, err := net.ParseCIDR(aip)
+			case "self":
+				// self [endpoint] [allowed-ips ... ]
+				zone.serveSelf = true
+				args = c.RemainingArgs()
+				if len(args) < 1 {
+					break
+				}
+
+				// assume first arg is endpoint
+				host, portS, err := net.SplitHostPort(args[0])
+				if err == nil {
+					port, err := strconv.Atoi(portS)
 					if err != nil {
-						return nil, fmt.Errorf("invalid self-allowed-ips: %s err: %v", c.Val(), err)
+						return Zones{}, fmt.Errorf("error converting self endpoint port: %v", err)
 					}
-					p.selfAllowedIPs = append(p.selfAllowedIPs, *prefix)
+					ip := net.ParseIP(host)
+					if ip == nil {
+						return Zones{}, fmt.Errorf("invalid self endpoint IP address: %s", host)
+					}
+					zone.selfEndpoint = &net.UDPAddr{
+						IP:   ip,
+						Port: port,
+					}
+					args = args[1:]
 				}
-			case optionSelfEndpoint:
-				endpoint := c.RemainingArgs()
-				if len(endpoint) != 1 {
-					return nil, fmt.Errorf("expected 1 arg, got %d", len(endpoint))
+
+				if len(args) > 0 {
+					zone.selfAllowedIPs = make([]net.IPNet, 0)
 				}
-				host, portS, err := net.SplitHostPort(endpoint[0])
-				if err != nil {
-					return nil, fmt.Errorf("invalid self-endpoint, err: %v", err)
-				}
-				port, err := strconv.Atoi(portS)
-				if err != nil {
-					return nil, fmt.Errorf("error converting self-endpoint port: %v", err)
-				}
-				ip := net.ParseIP(host)
-				if ip == nil {
-					return nil, fmt.Errorf("invalid self-endpoint, invalid IP address: %s", host)
-				}
-				p.selfEndpoint = &net.UDPAddr{
-					IP:   ip,
-					Port: port,
+				for _, allowedIPString := range args {
+					_, prefix, err := net.ParseCIDR(allowedIPString)
+					if err != nil {
+						return Zones{}, fmt.Errorf("invalid self allowed-ip '%s' err: %v", allowedIPString, err)
+					}
+					zone.selfAllowedIPs = append(zone.selfAllowedIPs, *prefix)
 				}
 			default:
-				return nil, c.ArgErr()
+				return Zones{}, c.ArgErr()
 			}
 		}
 	}
 
-	return p, nil
+	return Zones{Z: z, Names: names}, nil
 }
 
 func setup(c *caddy.Controller) error {
-	wgsd, err := parse(c)
+	zones, err := parse(c)
 	if err != nil {
 		return plugin.Error(pluginName, err)
 	}
@@ -84,13 +97,14 @@ func setup(c *caddy.Controller) error {
 				err))
 	}
 	c.OnFinalShutdown(client.Close)
-	wgsd.client = client
 
 	// Add the Plugin to CoreDNS, so Servers can use it in their plugin chain.
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
-		wgsd.Next = next
-		return wgsd
+		return &WGSD{
+			Next:   next,
+			Zones:  zones,
+			client: client,
+		}
 	})
-
 	return nil
 }
