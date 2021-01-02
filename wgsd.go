@@ -16,7 +16,11 @@ import (
 )
 
 // coredns plugin-specific logger
-var logger = clog.NewWithPlugin("wgsd")
+var logger = clog.NewWithPlugin(pluginName)
+
+const (
+	pluginName = "wgsd"
+)
 
 // WGSD is a CoreDNS plugin that provides WireGuard peer information via DNS-SD
 // semantics. WGSD implements the plugin.Handler interface.
@@ -300,5 +304,5 @@ func soa(zone string) dns.RR {
 }
 
 func (p *WGSD) Name() string {
-	return "wgsd"
+	return pluginName
 }
