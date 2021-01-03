@@ -93,12 +93,12 @@ $
 $ dig @127.0.0.1 -p 5353 yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com. SRV +noall +answer +additional
 yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com. 0	IN SRV 0 0 7777 yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com.
 yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com. 0	IN A 203.0.113.1
-yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com. 0	IN TXT "txtvers=1" "pub=xScVkH3fUGUv4RrJFfmcqm8rs3SEHr41km6+yffAHw4=" "allowed=10.0.0.254/32"
+yutrled535igkl7bdlerl6m4vjxsxm3uqqpl4nmsn27mt56ad4ha====._wireguard._udp.example.com. 0	IN TXT "txtvers=1" "pub=xScVkH3fUGUv4RrJFfmcqm8rs3SEHr41km6+yffAHw4=" "allowed=10.0.0.1/32"
 $
 $ dig @127.0.0.1 -p 5353 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. SRV +noall +answer +additional
 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. 0	IN SRV 0 0 8888 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com.
 wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. 0	IN A 198.51.100.1
-wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. 0	IN TXT "txtvers=1" "pub=syKB97XhGnvC+kynh2KqQJPXoOoOpx/HmpMRTc+r4js=" "allowed=10.0.0.254/32"
+wmrid55v4enhxqx2jstyoyvkicj5pihkb2tr7r42smiu3t5l4i5q====._wireguard._udp.example.com. 0	IN TXT "txtvers=1" "pub=syKB97XhGnvC+kynh2KqQJPXoOoOpx/HmpMRTc+r4js=" "allowed=10.0.0.2/32"
 $
 $ dig @127.0.0.1 -p 5353 extglt26a3znqnigvb5gvg26cqwblbgynf5re5pukdhx53cqwvda====._wireguard._udp.example.com. SRV +noall +answer +additional
 extglt26a3znqnigvb5gvg26cqwblbgynf5re5pukdhx53cqwvda====._wireguard._udp.example.com. 0	IN SRV 0 0 51820 extglt26a3znqnigvb5gvg26cqwblbgynf5re5pukdhx53cqwvda====._wireguard._udp.example.com.
