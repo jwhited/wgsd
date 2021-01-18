@@ -72,6 +72,15 @@ func TestWGSD(t *testing.T) {
 	}
 	peer2b32 := strings.ToLower(base32.StdEncoding.EncodeToString(peer2.PublicKey[:]))
 	peer2b64 := base64.StdEncoding.EncodeToString(peer2.PublicKey[:])
+	key3 := [32]byte{}
+	key3[0] = 3
+	peer3Allowed, _ := constructAllowedIPs(t, []string{"10.0.0.5/32", "10.0.0.6/32"})
+	peer3 := wgtypes.Peer{
+		Endpoint:   nil,
+		PublicKey:  key3,
+		AllowedIPs: peer3Allowed,
+	}
+	peer3b32 := strings.ToLower(base32.StdEncoding.EncodeToString(peer3.PublicKey[:]))
 	p := &WGSD{
 		Next: test.ErrorHandler(),
 		Zones: Zones{
@@ -91,7 +100,7 @@ func TestWGSD(t *testing.T) {
 					Name:       "wg0",
 					PublicKey:  selfKey,
 					ListenPort: 51820,
-					Peers:      []wgtypes.Peer{peer1, peer2},
+					Peers:      []wgtypes.Peer{peer1, peer2, peer3},
 				},
 			},
 		},
@@ -204,6 +213,46 @@ func TestWGSD(t *testing.T) {
 			Qname: "servfail.notexample.com.",
 			Qtype: dns.TypeAAAA,
 			Rcode: dns.RcodeServerFailure,
+		},
+		{
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer3b32),
+			Qtype: dns.TypeSRV,
+			Rcode: dns.RcodeNameError,
+			Ns: []dns.RR{
+				test.SOA(soa("example.com.").String()),
+			},
+			Answer: []dns.RR{},
+			Extra:  []dns.RR{},
+		},
+		{
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer3b32),
+			Qtype: dns.TypeA,
+			Rcode: dns.RcodeNameError,
+			Ns: []dns.RR{
+				test.SOA(soa("example.com.").String()),
+			},
+			Answer: []dns.RR{},
+			Extra:  []dns.RR{},
+		},
+		{
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer3b32),
+			Qtype: dns.TypeAAAA,
+			Rcode: dns.RcodeNameError,
+			Ns: []dns.RR{
+				test.SOA(soa("example.com.").String()),
+			},
+			Answer: []dns.RR{},
+			Extra:  []dns.RR{},
+		},
+		{
+			Qname: fmt.Sprintf("%s._wireguard._udp.example.com.", peer3b32),
+			Qtype: dns.TypeTXT,
+			Rcode: dns.RcodeNameError,
+			Ns: []dns.RR{
+				test.SOA(soa("example.com.").String()),
+			},
+			Answer: []dns.RR{},
+			Extra:  []dns.RR{},
 		},
 	}
 	for _, tc := range testCases {

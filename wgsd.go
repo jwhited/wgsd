@@ -103,6 +103,9 @@ func handleSRV(state request.Request, peers []wgtypes.Peer) (int, error) {
 		if strings.EqualFold(
 			base32.StdEncoding.EncodeToString(peer.PublicKey[:]), pubKey) {
 			endpoint := peer.Endpoint
+			if endpoint == nil {
+				return nxDomain(state)
+			}
 			hostRR := getHostRR(state.Name(), endpoint)
 			if hostRR == nil {
 				return nxDomain(state)
@@ -137,6 +140,9 @@ func handleHostOrTXT(state request.Request, peers []wgtypes.Peer) (int, error) {
 		if strings.EqualFold(
 			base32.StdEncoding.EncodeToString(peer.PublicKey[:]), pubKey) {
 			endpoint := peer.Endpoint
+			if endpoint == nil {
+				return nxDomain(state)
+			}
 			if state.QType() == dns.TypeA || state.QType() == dns.TypeAAAA {
 				hostRR := getHostRR(state.Name(), endpoint)
 				if hostRR == nil {
