@@ -178,16 +178,17 @@ func getSelfPeer(zone *Zone, device *wgtypes.Device, state request.Request) (wgt
 	return self, nil
 }
 
-func networkSizes(ips []*net.IPNet) (int, float64) {
-	var len int
+// takes a list of IPNets e.g "192.168.0.2/32" and 
+// and the total number of addresses exposed float64
+// assumed that the networks do not overlap
+func networkSizes(ips []*net.IPNet) float64 {
 	var tot float64
 	for _, ip := range ips {
 		ones, bits := ip.Mask.Size()
 		bitsize := (bits - ones)
-		len ++
 		tot += math.Pow(2,float64(bitsize))
 	}
-	return len, tot
+	return tot
 }
 
 func getPeers(client wgctrlClient, zone *Zone, state request.Request) (
@@ -201,7 +202,7 @@ func getPeers(client wgctrlClient, zone *Zone, state request.Request) (
 		peers = append(peers, device.Peers...)
 	} else {
 		for _, peer in range device.Peers{
-			if l , t := networkSizes(networks); l > 1 || t > 1 {
+			if t := networkSizes(networks); t > 1 { // could be more complex, e.g allow user to specify a threshold
 				peers = append(peers, peer)
 			}
 		}
@@ -223,7 +224,7 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 	state := request.Request{W: w, Req: r}
 
 	// Check if the request is 
-	a zone we are serving. If it doesn't match we
+	//a zone we are serving. If it doesn't match we
 	// pass the request on to the next plugin.
 	zoneName := plugin.Zones(p.Names).Matches(state.Name())
 	if zoneName == "" {
@@ -340,7 +341,7 @@ func soa(zone string) dns.RR {
 		Refresh: 86400,
 		Retry:   7200,
 		Expire:  3600000,
-		Minttl:  60,pe
+		Minttl:  60,
 	}
 }
 
