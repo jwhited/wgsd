@@ -45,7 +45,7 @@ wgsd ZONE DEVICE {
 ```
 
 * Supplying the `self` option enables serving data about the local WireGuard device in addition to its peers. The optional `ENDPOINT` argument enables setting a custom endpoint in ip:port form. If `ENDPOINT` is omitted wgsd will default to the local IP address for the DNS query and `ListenPort` of the WireGuard device. This can be useful if your host is behind NAT. The optional, variadic `ALLOWED-IPS` argument sets allowed-ips to be served for the local WireGuard device.
-* Supplying the optional `only-propagate-subnets` will mean that the registry will only respond to querries with peers that have more than one address listed in their `AllowedIPs`. For example it would responds with peers containing `AllowedIPs=192.168.10.0/24` or `AllowedIPs=192.168.10.2/32, 192.168.10.11/32` but not a peer with `AllowedIPs=192.168.20.1/32`
+* Supplying the optional `only-propagate-subnets` will mean that the registry will only respond to querries with peers that have more than one address listed in their `AllowedIPs`. For example it would responds with peers containing `AllowedIPs=192.168.10.0/24` or `AllowedIPs=192.168.10.2/32, 192.168.10.11/32` but not a peer with `AllowedIPs=192.168.20.1/32`. __WARNING:__ with its current implementation if a peer has its IPv4 address and IPv6 this will count as two and will be propagated `AllowedIPs=192.168.20.1/32, 2001:0db8:85a3:0000:0000:8a2e:0370:7334/128`
 
 ## Querying
 
