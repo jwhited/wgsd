@@ -181,7 +181,7 @@ func getSelfPeer(zone *Zone, device *wgtypes.Device, state request.Request) (wgt
 // takes a list of IPNets e.g "192.168.0.2/32" and 
 // and the total number of addresses exposed float64
 // assumed that the networks do not overlap
-func networkSizes(ips []*net.IPNet) float64 {
+func networkSizes(ips []net.IPNet) float64 {
 	var tot float64
 	for _, ip := range ips {
 		ones, bits := ip.Mask.Size()
