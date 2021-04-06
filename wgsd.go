@@ -5,9 +5,9 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"fmt"
+	"math"
 	"net"
 	"strings"
-	"math"
 
 	"github.com/coredns/coredns/plugin"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
@@ -42,7 +42,7 @@ type Zone struct {
 	serveSelf      bool         // flag to enable serving data about self
 	selfEndpoint   *net.UDPAddr // overrides the self endpoint value
 	selfAllowedIPs []net.IPNet  // self allowed IPs
-	onlySubnets    bool	    //
+	onlySubnets    bool         //
 }
 
 type wgctrlClient interface {
@@ -178,7 +178,7 @@ func getSelfPeer(zone *Zone, device *wgtypes.Device, state request.Request) (wgt
 	return self, nil
 }
 
-// takes a list of IPNets e.g "192.168.0.2/32" and 
+// takes a list of IPNets e.g "192.168.0.2/32" and
 // and the total number of addresses exposed float64
 // assumed that the networks do not overlap
 func networkSizes(ips []net.IPNet) float64 {
@@ -186,7 +186,7 @@ func networkSizes(ips []net.IPNet) float64 {
 	for _, ip := range ips {
 		ones, bits := ip.Mask.Size()
 		bitsize := (bits - ones)
-		tot += math.Pow(2,float64(bitsize))
+		tot += math.Pow(2, float64(bitsize))
 	}
 	return tot
 }
@@ -201,7 +201,7 @@ func getPeers(client wgctrlClient, zone *Zone, state request.Request) (
 	if !zone.onlySubnets {
 		peers = append(peers, device.Peers...)
 	} else {
-		for _, peer := range device.Peers{
+		for _, peer := range device.Peers {
 			if t := networkSizes(peer.AllowedIPs); t > 1 { // could be more complex, e.g allow user to specify a threshold
 				peers = append(peers, peer)
 			}
@@ -223,7 +223,7 @@ func (p *WGSD) ServeDNS(ctx context.Context, w dns.ResponseWriter,
 	// ResponseWriter.
 	state := request.Request{W: w, Req: r}
 
-	// Check if the request is 
+	// Check if the request is
 	//a zone we are serving. If it doesn't match we
 	// pass the request on to the next plugin.
 	zoneName := plugin.Zones(p.Names).Matches(state.Name())
