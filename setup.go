@@ -39,7 +39,10 @@ func parse(c *caddy.Controller) (Zones, error) {
 		z[zone.name] = zone
 
 		for c.NextBlock() {
+			zone.onlySubnets = false
 			switch c.Val() {
+			case "only-propagate-subnets":
+				zone.onlySubnets = true
 			case "self":
 				// self [endpoint] [allowed-ips ... ]
 				zone.serveSelf = true
