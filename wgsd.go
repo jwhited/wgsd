@@ -201,7 +201,7 @@ func getPeers(client wgctrlClient, zone *Zone, state request.Request) (
 	if !zone.onlySubnets {
 		peers = append(peers, device.Peers...)
 	} else {
-		for _, peer in range device.Peers{
+		for _, peer := range device.Peers{
 			if t := networkSizes(networks); t > 1 { // could be more complex, e.g allow user to specify a threshold
 				peers = append(peers, peer)
 			}
