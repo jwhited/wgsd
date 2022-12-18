@@ -1,6 +1,6 @@
 module github.com/jwhited/wgsd
 
-go 1.17
+go 1.19
 
 require (
 	github.com/coredns/caddy v1.1.1
