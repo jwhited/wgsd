@@ -16,7 +16,6 @@ builds:
       - arm64
 
   - id: wgsd-client
-    allow_different_binary_count: true
     main: ./cmd/wgsd-client/main.go
     binary: wgsd-client
     env:
@@ -29,3 +28,14 @@ builds:
       - 386
       - arm
       - arm64
+
+archives:
+  - id: coredns
+    format: binary
+    builds:
+      - coredns
+
+  - id: wgsd-client
+    format: binary
+    builds:
+      - wgsd-client
