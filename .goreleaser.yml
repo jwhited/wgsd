@@ -16,6 +16,7 @@ builds:
       - arm64
 
   - id: wgsd-client
+    allow_different_binary_count: true
     main: ./cmd/wgsd-client/main.go
     binary: wgsd-client
     env:
