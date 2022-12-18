@@ -1,5 +1,5 @@
 # wgsd
-`wgsd` is a [CoreDNS](https://github.com/coredns/coredns) plugin that serves WireGuard peer information via DNS-SD ([RFC6763](https://tools.ietf.org/html/rfc6763)) semantics. This enables use cases such as:
+`wgsd` is a [CoreDNS](https://github.com/coredns/coredns) plugin that serves WireGuard® peer information via DNS-SD ([RFC6763](https://tools.ietf.org/html/rfc6763)) semantics. This enables use cases such as:
 * Building a mesh of WireGuard peers from a central registry
 * Dynamic discovery of WireGuard Endpoint addressing (both IP address and port number)
 * NAT-to-NAT WireGuard connectivity where [UDP hole punching](https://en.wikipedia.org/wiki/UDP_hole_punching) is supported.
@@ -120,3 +120,6 @@ JeZlz14G8tg1Bqh6apteFCwVhNhpexJ19FDPfuxQtUY=
 - [x] unit tests
 - [ ] SOA record support
 - [x] CI & release binaries
+
+## Legal
+WireGuard is a registered trademark of Jason A. Donenfeld.
