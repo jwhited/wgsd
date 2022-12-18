@@ -31,11 +31,13 @@ builds:
 
 archives:
   - id: coredns
-    format: binary
+    format: tar.gz
+    name_template: wgsd-coredns_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}
     builds:
       - coredns
 
   - id: wgsd-client
-    format: binary
+    format: tar.gz
+    name_template: wgsd-client_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}
     builds:
       - wgsd-client
