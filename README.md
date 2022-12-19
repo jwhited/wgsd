@@ -9,8 +9,8 @@ See [this blog post](https://www.jordanwhited.com/posts/wireguard-endpoint-disco
 ## Installation
 Binary releases are available [here](https://github.com/jwhited/wgsd/releases).
 
-Each release contains 2 binaries:
-* `coredns` - CoreDNS server with all the "internal" plugins + `wgsd`
+There are two packages per GOOS/GOARCH for each release:
+* `wgsd-coredns` - CoreDNS server with all the "internal" plugins + `wgsd`
 * `wgsd-client` - A sample client
 
 ## Building from source
