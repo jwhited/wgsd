@@ -1,0 +1,11 @@
+[Unit]
+Description=Run WireGuard Service Discovery (wgsd) Client
+
+[Timer]
+OnActiveSec=10
+OnUnitActiveSec=45
+AccuracySec=1s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

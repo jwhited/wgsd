@@ -1,0 +1,17 @@
+[Unit]
+Description=WireGuard Service Discovery (wgsd) Client
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+PermissionsStartOnly=true
+LimitNOFILE=512
+LimitNPROC=16
+CapabilityBoundingSet=CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_ADMIN
+NoNewPrivileges=true
+User=wgsd-client
+Group=wgsd-client
+DynamicUser=true
+EnvironmentFile=/etc/wgsd/%i.env
+ExecStart=/usr/local/bin/wgsd-client -device %i -dns $DNS -zone $ZONE
